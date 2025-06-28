@@ -38,7 +38,8 @@ while True:
     sql = gerar_sql(historico, pergunta)
     print("chat_bot: Comando SQL gerado:", sql)
 
-    # Enviar SQL ao servidor MCP com protocolo correto
+    #Envia protocolo mcp
+
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect(("localhost", 5000))
@@ -52,7 +53,7 @@ while True:
 
     # Interpretar resposta do protocolo MCP
     try:
-        # Separar cabeçalho e corpo
+
         partes = resposta_raw.split("\n\n", 1)
         if len(partes) == 2:
             cabecalho, corpo = partes

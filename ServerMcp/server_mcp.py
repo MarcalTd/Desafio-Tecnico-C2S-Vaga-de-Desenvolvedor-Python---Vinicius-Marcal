@@ -4,7 +4,6 @@ import psycopg2
 
 
 def parse_mcp_request(request: str):
-    """Faz o parsing de uma requisição MCP"""
     lines = request.split("\n")
     if not lines[0].startswith("MCP/1.0"):
         raise ValueError("Protocolo inválido")
