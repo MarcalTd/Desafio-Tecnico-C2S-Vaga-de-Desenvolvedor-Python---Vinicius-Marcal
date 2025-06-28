@@ -7,6 +7,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import ChatOpenAI
 
+# from comando_voz import ouvir_comando
 from promps import (gerar_sql, interpretar_resultado,
                     verificar_encerramento_conversa)
 
