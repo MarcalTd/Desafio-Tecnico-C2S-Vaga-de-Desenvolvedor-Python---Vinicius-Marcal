@@ -19,6 +19,7 @@ elif 13 <= hora < 18:
     saudacao = "Boa tarde"
 else:
     saudacao = "Boa noite"
+    
 
 print(f"chat_bot: {saudacao}! Em que posso ajudar na sua busca por veículos?")
 
