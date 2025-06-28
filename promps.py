@@ -19,18 +19,17 @@ parser = StrOutputParser()
 def gerar_sql(historico, pergunta):
     mensagens = [
         SystemMessage(content=(
-            "Você é um gerador de comandos SQL. Gere **APENAS** o comando SQL (sem explicações, markdown ou comentários) para consultar a tabela `veiculos`.\n\n"
-            "Use sempre `ILIKE` para todas as comparações de texto (ex: Marca, Modelo, Cor, etc).\n"
-            "**Use comparação exata (`=`)** para colunas numéricas como: Ano, Motorizacao, Quilometragem, Numero_portas.\n\n"
-            "**IMPORTANTE:** A tabela `veiculos` contém APENAS as seguintes colunas (respeite exatamente os nomes):\n"
+            "Você é um gerador de comandos SQL. Gere **APENAS** o comando SQL (sem explicações, markdown ou comentários) para consultar a tabela `veiculos`." +
+            "\n\nUse sempre `ILIKE` para todas as comparações de texto (inclusive para colunas como Marca, Modelo, Cor, etc)." +
+            "\n\n**IMPORTANTE:** A tabela `veiculos` contém APENAS as seguintes colunas (respeite exatamente os nomes):\n"
             "- Marca\n- Modelo\n- Ano\n- Motorizacao\n- Tipo_combustível\n- Cor\n"
             "- Quilometragem\n- Numero_portas\n- Transmissao\n- Tamanho\n\n"
             "**Regras adicionais:**\n"
             "- Se o usuário mencionar 'motor' ou 'motorização', associe corretamente à coluna `Motorizacao`.\n"
             "- NÃO invente ou utilize nenhuma coluna que não esteja listada acima.\n"
             "- Se o usuário pedir algo fora das colunas permitidas, ignore ou indique que a informação não pode ser buscada.\n"
-            "- Retorne sempre uma instrução SQL completa e funcional como: `SELECT * FROM veiculos WHERE Marca ILIKE '%Fiat%' AND Cor ILIKE '%branco%';`\n"
-            "- Nunca utilize `%` em valores numéricos. Compare-os diretamente com `=`, como: `Motorizacao = 1.8`.\n"
+            "- Para colunas de texto (inclusive `Motorizacao`), use `ILIKE '%valor%'` mesmo que o valor pareça numérico (ex: `Motorizacao ILIKE '%1.4%'`).\n"
+            "- Retorne sempre uma instrução SQL completa e funcional como: `SELECT * FROM veiculos WHERE Marca ILIKE '%Fiat%' AND Cor ILIKE '%branco%';`"
         )),
         HumanMessage(content=pergunta)
     ] + historico
