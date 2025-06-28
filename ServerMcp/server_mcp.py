@@ -3,6 +3,61 @@ import socket
 import psycopg2
 
 
+def parse_mcp_request(request: str):
+    """Faz o parsing de uma requisição MCP"""
+    lines = request.split("\n")
+    if not lines[0].startswith("MCP/1.0"):
+        raise ValueError("Protocolo inválido")
+
+    command = None
+    length = 0
+    body_index = 0
+
+    for i, line in enumerate(lines[1:], 1):
+        if line.startswith("COMMAND:"):
+            command = line.split(":", 1)[1].strip()
+        elif line.startswith("LENGTH:"):
+            length = int(line.split(":", 1)[1].strip())
+        elif line.strip() == "":
+            body_index = i + 1
+            break
+
+    body = "\n".join(lines[body_index:])
+    if len(body.encode()) != length:
+        raise ValueError("Comprimento do corpo inválido")
+
+    return command, body
+
+def build_mcp_response(status: str, body: str):
+    body_bytes = body.encode()
+    return f"MCP/1.0\nSTATUS: {status}\nLENGTH: {len(body_bytes)}\n\n{body}"
+
+def handle_query(sql_query: str):
+    try:
+        conn_db = psycopg2.connect(
+            host="localhost",
+            port=5432,
+            database="desafio",
+            user="postgres",
+            password="postgre"
+        )
+        cur = conn_db.cursor()
+        cur.execute(sql_query)
+
+        try:
+            resultados = cur.fetchall()
+            resposta = "\n".join(str(row) for row in resultados)
+        except psycopg2.ProgrammingError:
+            resposta = "Comando executado com sucesso."
+
+        cur.close()
+        conn_db.commit()
+        conn_db.close()
+
+        return "OK", resposta or "Nenhum resultado encontrado."
+    except Exception as e:
+        return "ERROR", f"Erro ao executar SQL: {str(e)}"
+
 def start_server():
     HOST = 'localhost'
     PORT = 5000
@@ -15,50 +70,22 @@ def start_server():
         while True:
             conn_client, addr = s.accept()
             with conn_client:
-                print(f"Conexão de {addr}")
-                sql_query = conn_client.recv(8192).decode()
-                print(f"SQL original recebido:\n{sql_query}")
-
-                # Limpar tags markdown do SQL
-                sql_query = sql_query.strip()
-                if sql_query.startswith("```sql"):
-                    sql_query = sql_query[len("```sql"):]
-
-                if sql_query.endswith("```"):
-                    sql_query = sql_query[:-3]
-
-                sql_query = sql_query.strip()
-                print(f"SQL limpo para execução:\n{sql_query}")
+                print(f"\nConexão de {addr}")
+                data = conn_client.recv(8192).decode()
+                print(f"Requisição MCP recebida:\n{data}")
 
                 try:
-                    conn_db = psycopg2.connect(
-                        host="localhost",
-                        port=5432,
-                        database="desafio",
-                        user="postgres",
-                        password="postgre"
-                    )
-                    cur = conn_db.cursor()
-                    cur.execute(sql_query)
-                    resultados = cur.fetchall()
-
-                    resposta = ""
-                    for linha in resultados:
-                        resposta += str(linha) + "\n"
-
-                    if not resposta:
-                        resposta = "Nenhum resultado encontrado."
-
-                    cur.close()
-                    conn_db.commit()
-                    conn_db.close()
-
-                    conn_client.sendall(resposta.encode())
-
+                    command, body = parse_mcp_request(data)
+                    print(f"Comando: {command}")
+                    if command == "QUERY":
+                        status, result = handle_query(body)
+                    else:
+                        status, result = "ERROR", f"Comando desconhecido: {command}"
                 except Exception as e:
-                    erro_str = f"Erro ao executar SQL: {str(e)}"
-                    conn_client.sendall(erro_str.encode())
+                    status, result = "ERROR", f"Erro no protocolo: {str(e)}"
 
+                response = build_mcp_response(status, result)
+                conn_client.sendall(response.encode())
 
 if __name__ == "__main__":
     start_server()
